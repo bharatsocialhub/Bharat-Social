@@ -1,0 +1,3 @@
+Project: bharat-social-87cfd
+Android package: com.bharatsocial.app
+App ID: 1:321961203283:android:8bc626811c4984465fd8a6

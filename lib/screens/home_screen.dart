@@ -1,0 +1,20 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import '../services/auth_service.dart';
+import '../services/post_service.dart';
+
+class HomeScreen extends StatefulWidget { const HomeScreen({super.key}); @override State<HomeScreen> createState()=>_HomeScreenState(); }
+class _HomeScreenState extends State<HomeScreen>{ int tab=0; final service=PostService();
+  @override Widget build(BuildContext context){ final pages=[feed(),search(),create(),activity(),profile()]; return Scaffold(body:pages[tab],bottomNavigationBar:NavigationBar(selectedIndex:tab,onDestinationSelected:(i)=>setState(()=>tab=i),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined),selectedIcon:Icon(Icons.home),label:'Home'),NavigationDestination(icon:Icon(Icons.search),label:'Search'),NavigationDestination(icon:Icon(Icons.add_box_outlined),label:'Create'),NavigationDestination(icon:Icon(Icons.favorite_border),label:'Activity'),NavigationDestination(icon:Icon(Icons.person_outline),label:'Profile')])); }
+  Widget feed()=>Scaffold(appBar:AppBar(title:const Text('Bharat Social',style:TextStyle(fontWeight:FontWeight.bold)),actions:[IconButton(onPressed:()=>AuthService().signOut(),icon:const Icon(Icons.logout))]),body:StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(stream:service.feed(),builder:(c,s){if(s.hasError)return Center(child:Text('Feed error: ${s.error}'));if(!s.hasData)return const Center(child:CircularProgressIndicator());final docs=s.data!.docs;return ListView(children:[SizedBox(height:100,child:ListView(scrollDirection:Axis.horizontal,children:const[Story('Your story'),Story('Raj'),Story('Nirali'),Story('Dhruv'),Story('Kajal')].map((x)=>x).toList())),...docs.map((d)=>post(d.data()))]);}));
+  Widget post(Map<String,dynamic> p)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[ListTile(leading:const CircleAvatar(child:Icon(Icons.person)),title:Text(p['username']??'User',style:const TextStyle(fontWeight:FontWeight.bold))),AspectRatio(aspectRatio:1,child:Image.network(p['imageUrl']??'',fit:BoxFit.cover,errorBuilder:(_,__,___)=>const Center(child:Icon(Icons.image_not_supported)))),Padding(padding:const EdgeInsets.all(12),child:Text(p['caption']??'')),const Divider()]);
+  Widget search()=>Scaffold(appBar:AppBar(title:const Text('Search')),body:const Padding(padding:EdgeInsets.all(16),child:TextField(decoration:InputDecoration(prefixIcon:Icon(Icons.search),hintText:'People, places, hashtags',border:OutlineInputBorder()))));
+  Widget create()=>Scaffold(appBar:AppBar(title:const Text('Create Post')),body:Center(child:FilledButton.icon(onPressed:pick,icon:const Icon(Icons.photo_library),label:const Text('Choose photo'))));
+  Future<void> pick() async { final x=await ImagePicker().pickImage(source:ImageSource.gallery,imageQuality:85); if(x==null)return; final user=FirebaseAuth.instance.currentUser!; final url=await service.uploadImage(File(x.path),user.uid); await service.createPost(uid:user.uid,username:user.email??'User',imageUrl:url,caption:'New Bharat Social post'); if(mounted){setState(()=>tab=0);ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Post uploaded')));}}
+  Widget activity()=>Scaffold(appBar:AppBar(title:const Text('Activity')),body:const Center(child:Text('Likes, comments and follows will appear here.')));
+  Widget profile()=>Scaffold(appBar:AppBar(title:const Text('My Profile')),body:Center(child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[const CircleAvatar(radius:48,child:Icon(Icons.person,size:50)),const SizedBox(height:12),Text(FirebaseAuth.instance.currentUser?.email??'User'),const SizedBox(height:20),FilledButton(onPressed:()=>AuthService().signOut(),child:const Text('Logout'))])));
+}
+class Story extends StatelessWidget{final String n;const Story(this.n,{super.key});@override Widget build(BuildContext c)=>SizedBox(width:80,child:Column(children:[const SizedBox(height:10),const CircleAvatar(radius:30,child:Icon(Icons.person)),Text(n,overflow:TextOverflow.ellipsis)]));}
