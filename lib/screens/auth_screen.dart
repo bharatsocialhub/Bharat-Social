@@ -17,5 +17,5 @@ class _AuthScreenState extends State<AuthScreen>{
     if(error.isNotEmpty) Padding(padding:const EdgeInsets.all(8),child:Text(error,style:const TextStyle(color:Colors.red))),
     const SizedBox(height:12), SizedBox(width:double.infinity,child:FilledButton(onPressed:busy?null:submit,child:Text(busy?'Please wait...':(login?'Login':'Create account')))),
     TextButton(onPressed:()=>setState(()=>login=!login),child:Text(login?'New here? Create account':'Already have an account? Login')),
-  ]))));
+  ])))));
 }
